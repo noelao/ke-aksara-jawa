@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Konverter Aksara Jawa</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Javanese&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary: #8e44ad;
+            --bg: #f3f4f6;
+            --card: #ffffff;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            background-color: var(--card);
+            padding: 2rem;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 600px;
+            text-align: center;
+        }
+
+        h1 {
+            color: var(--primary);
+            margin-bottom: 1.5rem;
+        }
+
+        .input-group {
+            margin-bottom: 1.5rem;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #555;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 1rem;
+            resize: vertical;
+            min-height: 100px;
+            box-sizing: border-box; /* Agar padding tidak merusak lebar */
+        }
+
+        textarea:focus {
+            border-color: var(--primary);
+            outline: none;
+        }
+
+        .output-area {
+            background-color: #fafafa;
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 20px;
+            min-height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        /* Styling khusus Aksara Jawa */
+        #javaneseOutput {
+            font-family: 'Noto Sans Javanese', sans-serif;
+            font-size: 2rem;
+            line-height: 1.6;
+            color: #333;
+        }
+
+        .note {
+            font-size: 0.8rem;
+            color: #888;
+            margin-top: 20px;
+        }
+
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background-color: #732d91;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Transliterasi Aksara Jawa</h1>
+        
+        <div class="input-group">
+            <label for="latinInput">Masukkan Teks Latin:</label>
+            <textarea id="latinInput" placeholder="Contoh: hanacaraka datasawala..." oninput="convertText()"></textarea>
+        </div>
+
+        <div class="input-group">
+            <label>Hasil Aksara Jawa:</label>
+            <div class="output-area">
+                <div id="javaneseOutput">...</div>
+            </div>
+            <button onclick="copyToClipboard()">Salin Teks</button>
+        </div>
+
+        <p class="note">Catatan: Ini adalah konverter sederhana (Mapping Dasar). Untuk penulisan formal (pasangan/murda), disarankan verifikasi manual.</p>
+    </div>
+
+    <script>
+        // Peta Karakter Dasar (Nglegena)
+        const charMap = {
+            'ha': 'ꦲ', 'na': 'ꦤ', 'ca': 'ꦕ', 'ra': 'ꦫ', 'ka': 'ꦏ',
+            'da': 'ꦢ', 'ta': 'ꦠ', 'sa': 'ꦱ', 'wa': 'ꦮ', 'la': 'ꦭ',
+            'pa': 'ꦥ', 'dha': 'ꦝ', 'ja': 'ꦗ', 'ya': 'ꦪ', 'nya': 'ꦚ',
+            'ma': 'ꦩ', 'ga': 'ꦒ', 'ba': 'ꦧ', 'tha': 'ꦛ', 'nga': 'ꦔ'
+        };
+
+        // Peta Vokal (Sandhangan Swara) - Implementasi Sederhana
+        const vowelMap = {
+            'i': 'ꦶ', // Wulu
+            'u': 'ꦸ', // Suku
+            'e': 'ꦺ', // Taling
+            'o': 'ꦺꦴ', // Taling Tarung
+            'é': 'ꦺ'  // Taling (pepet beda lagi, default e = taling di sini)
+        };
+        
+        // Pepet (e lemah seperti 'se'mut) biasanya butuh logika khusus
+        // Di sini kita anggap 'x' sebagai pepet untuk kemudahan demo
+        const pepet = 'ꦼ'; 
+
+        function convertText() {
+            let input = document.getElementById('latinInput').value.toLowerCase();
+            let output = "";
+
+            // Logika transliterasi sangat sederhana (Iterasi per suku kata)
+            // Catatan: Ini logic basic, bukan engine transliterasi penuh.
+            
+            // 1. Kita pecah string biar bisa diproses (pendekatan naive)
+            //    Di app asli, kita harus pakai library parser (state machine).
+            
+            let i = 0;
+            while (i < input.length) {
+                let found = false;
+                
+                // Cek 3 huruf (contoh: nya, dha, tha, nga)
+                if (i + 3 <= input.length) {
+                    let sub3 = input.substring(i, i + 3);
+                    if (charMap[sub3]) {
+                        output += charMap[sub3];
+                        i += 3;
+                        found = true;
+                        continue;
+                    }
+                }
+
+                // Cek 2 huruf (ha, na, ca...)
+                if (!found && i + 2 <= input.length) {
+                    let sub2 = input.substring(i, i + 2);
+                    if (charMap[sub2]) {
+                        output += charMap[sub2];
+                        i += 2;
+                        found = true;
+                        continue;
+                    }
+                }
+
+                // Cek Vokal/Sandhangan
+                if (!found) {
+                    let char = input[i];
+                    if (vowelMap[char]) {
+                        // Kalau vokal, biasanya nempel ke huruf sebelumnya
+                        // Tapi kalau di awal kata, harusnya pakai Aksara Swara (tidak dicover di script simple ini)
+                        output += vowelMap[char];
+                    } else if (char === ' ') {
+                        output += ' ';
+                    } else {
+                        // Kalau tidak ketemu, biarkan huruf aslinya atau tambahkan logika pangkon nanti
+                        // Untuk demo ini, kita skip karakter tak dikenal
+                    }
+                    i++;
+                }
+            }
+
+            document.getElementById('javaneseOutput').innerText = output || "...";
+        }
+
+        function copyToClipboard() {
+            const text = document.getElementById('javaneseOutput').innerText;
+            navigator.clipboard.writeText(text).then(() => {
+                alert("Teks Aksara Jawa berhasil disalin!");
+            });
+        }
+    </script>
+</body>
+</html>
